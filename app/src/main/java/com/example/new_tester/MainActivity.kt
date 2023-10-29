@@ -9,7 +9,9 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Button
@@ -37,7 +39,23 @@ class MainActivity : AppCompatActivity() {
         textureView = findViewById(R.id.textureView)
         captureButton = findViewById(R.id.captureButton)
         resultTextView = findViewById(R.id.resultTextView)
+        val openCameraButton: Button = findViewById(R.id.captureButton)
 
+        openCameraButton.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                openCamera()
+            } else {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.CAMERA),
+                    REQUEST_CAMERA_PERMISSION
+                )
+            }
+        }
     }
 
     private val textureListener = object : TextureView.SurfaceTextureListener {
@@ -47,6 +65,7 @@ class MainActivity : AppCompatActivity() {
             height: Int
         ) {
             openCamera()
+            Log.d("Module Opened:","Camera has been opened")
         }
 
         override fun onSurfaceTextureSizeChanged(
@@ -54,7 +73,6 @@ class MainActivity : AppCompatActivity() {
             width: Int,
             height: Int
         ) {
-            // Transform you image captured size according to the surface width and height
         }
 
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
@@ -76,6 +94,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onError(camera: CameraDevice, error: Int) {
             cameraDevice.close()
+            this@MainActivity.finish()
         }
     }
     private fun openCamera() {
@@ -93,6 +112,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun createCameraPreviewSession() {
         try {
             val texture = textureView.surfaceTexture
@@ -107,7 +127,7 @@ class MainActivity : AppCompatActivity() {
             captureRequestBuilder.addTarget(surface)
 
             cameraDevice.createCaptureSession(
-                Arrays.asList(surface),
+                listOf(surface),
                 object : CameraCaptureSession.StateCallback() {
                     override fun onConfigured(session: CameraCaptureSession) {
                         cameraCaptureSession = session
